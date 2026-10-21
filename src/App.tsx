@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { PixoraProvider, usePixora } from './context/PixoraContext';
 import { UserApp } from './components/UserApp';
