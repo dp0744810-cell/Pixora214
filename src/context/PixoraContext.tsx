@@ -16,6 +16,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   type User as FirebaseUser,
@@ -42,9 +43,7 @@ import {
   INITIAL_LOGS,
 } from '../initialData';
 
-// ============================================================================
-// EMBEDDED FIREBASE INITIALIZATION (No external firebase file required)
-// ============================================================================
+// DIRECT FIREBASE CONFIG INSIDE CONTEXT (NO '../firebase' FILE NEEDED!)
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyAYzRbUiiANg30I3DN_p-LHQ8aJjUv8mvw',
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'mrx2145-f99e9.firebaseapp.com',
@@ -104,6 +103,7 @@ interface PixoraContextType {
     isPrivate: boolean;
   }) => Promise<{ success: boolean; error?: string }>;
   loginWithFirebaseGoogle: () => Promise<{ success: boolean; error?: string }>;
+  resetPasswordFirebase: (email: string) => Promise<{ success: boolean; error?: string }>;
   logoutFirebase: () => Promise<void>;
   updateUserProfile: (updates: Partial<User>) => void;
   toggleAccountPrivacy: () => void;
@@ -557,8 +557,35 @@ export const PixoraProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         if (userSnap.exists()) {
           const uData = normalizeUserArrays(userSnap.data() as User);
           setUsers((prev) => [uData, ...prev.filter((u) => u.id !== uid)]);
+          setCurrentUserId(uid);
+        } else {
+          const cleanUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_');
+          const fallbackUser: User = {
+            id: uid,
+            username: cleanUsername,
+            fullName: 'Pixora User',
+            email: email.trim(),
+            dateOfBirth: '2000-01-01',
+            bio: 'Pixora Member',
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${cleanUsername}`,
+            isPrivate: false,
+            isVerified: false,
+            role: 'user',
+            status: 'active',
+            followers: [],
+            following: [],
+            pendingFollowRequests: [],
+            savedPostIds: [],
+            createdAt: new Date().toISOString(),
+            isOnline: true,
+            lastActive: 'Active now',
+          };
+          try {
+            await setDoc(doc(db, 'users', uid), fallbackUser);
+          } catch (_) {}
+          setUsers((prev) => [fallbackUser, ...prev.filter((u) => u.id !== uid)]);
+          setCurrentUserId(uid);
         }
-        setCurrentUserId(uid);
         setFirebaseAuthLoading(false);
         return { success: true };
       } catch (err: any) {
@@ -679,6 +706,18 @@ export const PixoraProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     } catch (err: any) {
       setFirebaseAuthLoading(false);
       return { success: false, error: err?.message || 'Google sign-in failed' };
+    }
+  }, []);
+
+  const resetPasswordFirebase = useCallback(async (email: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!email.trim()) {
+        return { success: false, error: 'Kripya apna email enter karein.' };
+      }
+      await sendPasswordResetEmail(auth, email.trim());
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Password reset email bhejne mein fail ho gaya.' };
     }
   }, []);
 
@@ -1026,6 +1065,7 @@ export const PixoraProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         loginWithFirebaseEmail,
         registerWithFirebaseEmail,
         loginWithFirebaseGoogle,
+        resetPasswordFirebase,
         logoutFirebase,
         updateUserProfile,
         toggleAccountPrivacy,
