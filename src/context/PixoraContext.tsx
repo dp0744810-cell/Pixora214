@@ -1,26 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  updateDoc,
-  deleteDoc,
-  collection,
-  onSnapshot,
-} from 'firebase/firestore';
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  signOut as firebaseSignOut,
-  onAuthStateChanged,
-  type User as FirebaseUser,
-} from 'firebase/auth';
 import {
   User,
   Post,
@@ -42,22 +20,25 @@ import {
   INITIAL_ANNOUNCEMENTS,
   INITIAL_LOGS,
 } from '../initialData';
-
-// DIRECT FIREBASE CONFIG INSIDE CONTEXT (NO '../firebase' FILE NEEDED!)
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyAYzRbUiiANg30I3DN_p-LHQ8aJjUv8mvw',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'mrx2145-f99e9.firebaseapp.com',
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || 'https://mrx2145-f99e9-default-rtdb.firebaseio.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'mrx2145-f99e9',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'mrx2145-f99e9.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '394231867021',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:394231867021:android:903607c095e2ae2711a4c4',
-};
-
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+import {
+  db,
+  auth,
+  doc,
+  setDoc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  onSnapshot,
+  googleProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  firebaseSignOut,
+  onAuthStateChanged,
+  FirebaseUser,
+} from '../firebase';
 
 interface PixoraContextType {
   currentUser: User;
